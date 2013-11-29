@@ -36,10 +36,10 @@ class LobRequestor(object):
     def __init__(self):
         self._api_key = api_key
 
-    def _make_requests_request(self, method, url_suffix, data):
+    def _make_requests_request(self, method, url_suffix, data, files):
         full_url = '%s%s' % (self._api_base_url, url_suffix)
 
-        r = self._method_fn_map.get(method)(url=full_url, data=data,
+        r = self._method_fn_map.get(method)(url=full_url, data=data, files=files,
                                             auth=(self._api_key, ''))
         content = json.loads(r.content)
         error = content.get('error', content.get('errors', []))  # if any error
@@ -62,9 +62,14 @@ class LobRequestor(object):
                            http_status=r.status_code, json_body=content)
 
     def make_request(self, method, url_suffix, data={}):
-        if _httplib == 'requests':
+        if _httplib == 'requests':  
+            files = None
+            if hasattr(data.get('file'), 'read'):
+                data = data.copy()
+                files = dict(file=data.pop('file'))
             return self._make_requests_request(method=method, data=data,
-                                               url_suffix=url_suffix)
+                                               url_suffix=url_suffix,
+                                               files=files)
 
 
 def make_lob_object(response):
